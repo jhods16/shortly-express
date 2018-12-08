@@ -1,8 +1,8 @@
 const models = require('../models');
 const Promise = require('bluebird');
 
-const createSessionAndAttachCookie = (req, res, next) => {
-  models.Sessions.create()
+module.exports.createSessionAndAttachCookie = (req, res) => {
+  return models.Sessions.create()
     .then(result => {
       return models.Sessions.get({id: result.insertId});
     })
@@ -16,8 +16,7 @@ const createSessionAndAttachCookie = (req, res, next) => {
     
       res.cookie('shortlyid', result.hash);
       
-      next();
-      throw ('done');
+      // throw ('done');
     })
     .catch(() => {});
 };
@@ -27,7 +26,13 @@ module.exports.createSession = (req, res, next) => {
   console.log('inside create session', req.cookies, req.get('Cookie'));
   if (!req.cookies || Object.keys(req.cookies).length === 0) {
   //  models.Sessions.create()
-    createSessionAndAttachCookie(req, res, next);
+    module.exports.createSessionAndAttachCookie(req, res)
+      .then(() => {
+        next();
+        throw ('done');
+      })
+      .catch(() => {});
+    
   // else
   } else {
     console.log('inside else', req.cookies, req.get('Cookie'));
@@ -37,7 +42,12 @@ module.exports.createSession = (req, res, next) => {
         console.log('tried to get', result);
         // if result is undefined (cookie not in sessions database)
         if (result === undefined) {
-          createSessionAndAttachCookie(req, res, next);
+          module.exports.createSessionAndAttachCookie(req, res)
+            .then(() => {
+              next();
+              throw ('done');
+            })
+            .catch(() => {});
         }
         //   attach new cookie to response
         //   next

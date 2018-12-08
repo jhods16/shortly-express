@@ -141,14 +141,21 @@ app.post('/signup',
       .catch((err) => {
         console.log(err);
         res.redirect('/signup');
-        // res.status(400).send(err);
       });
-    //  if err
-    //    redirect back to signup -- user already exists
-    //  else
-    //    respond with 201, headers -- including cookie?
-    //    respond with any other info?
-    //    redirect to index -- in the future we will need to do something re the session
+
+  });
+
+app.get('/logout',
+  (req, res) => {
+    // delete session from sessions db
+    models.Sessions.delete({hash: req.session.hash})
+      .then(() => {
+        return Auth.createSessionAndAttachCookie(req, res);
+      })
+      .then(() => {
+        res.redirect('/login');
+      });
+    // reassign a cookie - createSessionAndAttachCookie
   });
 
 /************************************************************/
