@@ -14,7 +14,9 @@ const createSessionAndAttachCookie = (req, res, next) => {
         } 
       };
       next();
-    });
+      throw ('done');
+    })
+    .catch(() => {});
 };
 
 module.exports.createSession = (req, res, next) => {
@@ -46,6 +48,7 @@ module.exports.createSession = (req, res, next) => {
         console.log('userId?', userId);
         if (userId === null) {
           next();
+          throw ('no userId');
         }
         return models.Users.get({id: userId});
       })
@@ -53,6 +56,9 @@ module.exports.createSession = (req, res, next) => {
         console.log(result);
         req.session.user = {username: result.username};
         next();
+      })
+      .catch(() => {
+        return;
       });
     
   }
