@@ -1,24 +1,28 @@
 const models = require('../models');
 const Promise = require('bluebird');
 
+const createSessionAndAttachCookie = (req, res, next) => {
+  models.Sessions.create()
+    .then(result => {
+      return models.Sessions.get({id: result.insertId});
+    })
+    .then(result => {
+      req.session = { hash: result.hash };
+      res.cookies = { 
+        shortlyid: {
+          value: result.hash
+        } 
+      };
+      next();
+    });
+};
+
 module.exports.createSession = (req, res, next) => {
   // if there are no cookies on the request
   console.log('inside create session', req.cookies, req.get('Cookie'));
   if (!req.cookies || Object.keys(req.cookies).length === 0) {
   //  models.Sessions.create()
-    models.Sessions.create()
-      .then(result => {
-        return models.Sessions.get({id: result.insertId});
-      })
-      .then(result => {
-        req.session = { hash: result.hash };
-        res.cookies = { 
-          shortlyid: {
-            value: result.hash
-          } 
-        };
-        next();
-      });
+    createSessionAndAttachCookie(req, res, next);
   // else
   } else {
     console.log('inside else', req.cookies, req.get('Cookie'));
@@ -26,6 +30,12 @@ module.exports.createSession = (req, res, next) => {
     models.Sessions.get({hash: req.cookies['shortlyid']})
       .then(result => {
         console.log('tried to get', result);
+        // if result is undefined (cookie not in sessions database)
+        if (result === undefined) {
+          createSessionAndAttachCookie(req, res, next);
+        }
+        //   attach new cookie to response
+        //   next
         req.session = {
           hash: result.hash,
           userId: result.userId
