@@ -13,6 +13,9 @@ const createSessionAndAttachCookie = (req, res, next) => {
           value: result.hash
         } 
       };
+    
+      res.cookie('shortlyid', result.hash);
+      
       next();
       throw ('done');
     })
@@ -61,14 +64,7 @@ module.exports.createSession = (req, res, next) => {
         return;
       });
     
-  }
-  //  if there is grab the userId associated with it
-  //    create a sessions object {hash, userId, username} and assign it to req.session
-  //  if there is not a matching cookie
-  //    delete the cookie and create a new one
-  //    models.Sessions.create()
-  //    then res.cookie = { shortlyid: hash }
-  //    
+  } 
 };
 
 /************************************************************/

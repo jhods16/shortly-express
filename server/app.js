@@ -15,6 +15,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '../public')));
 app.use(cookieParser);
+app.use(Auth.createSession);
 
 
 app.get('/', 
@@ -89,14 +90,20 @@ app.post('/login',
     var username = req.body.username;
     // get password
     var password = req.body.password;
+    var userId;
     // check if user exists and password is correct
     models.Users.get({ username })
       .then(results => {
+        userId = results.id;
         return models.Users.compare(password, results.password, results.salt);
       })
       .then(isCorrect => {
         if (isCorrect) {
-          res.redirect('/');
+          // update sessions table userID with id from user table
+          models.Sessions.update({hash: req.session.hash}, { userId })
+            .then(() => {
+              res.redirect('/');
+            });
         } else {
           throw isCorrect;
         }
@@ -118,17 +125,21 @@ app.post('/signup',
     console.log('got username:', username);
     //get password
     var password = req.body.password;
+    var userId;
     console.log('got password:', password);
     //get cookie from header?
     //pass these values along to models.Users.create
     models.Users.create({ username, password })
-      .then(() => {
-        // console.log('created');
-        // res.sendStatus(201);
-        res.redirect('/');
+      .then((results) => {
+        console.log('before update sessions database', req.session.hash);
+        models.Sessions.update({hash: req.session.hash}, { userId: results.insertId })
+          .then(() => {
+            console.log('in then after update');
+            res.redirect('/');
+          });
       })
       .catch((err) => {
-        // console.log('error');
+        console.log(err);
         res.redirect('/signup');
         // res.status(400).send(err);
       });
