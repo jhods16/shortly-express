@@ -85,7 +85,25 @@ app.get('/login',
 
 app.post('/login', 
   (req, res) => {
-    
+    // get username
+    var username = req.body.username;
+    // get password
+    var password = req.body.password;
+    // check if user exists and password is correct
+    models.Users.get({ username })
+      .then(results => {
+        return models.Users.compare(password, results.password, results.salt);
+      })
+      .then(isCorrect => {
+        if (isCorrect) {
+          res.redirect('/');
+        } else {
+          throw isCorrect;
+        }
+      })
+      .catch((err) => {
+        res.redirect('/login');
+      });
   });
 
 app.get('/signup', 
