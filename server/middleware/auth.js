@@ -15,15 +15,12 @@ module.exports.createSessionAndAttachCookie = (req, res) => {
       };
     
       res.cookie('shortlyid', result.hash);
-      
-      // throw ('done');
     })
     .catch(() => {});
 };
 
 module.exports.createSession = (req, res, next) => {
   // if there are no cookies on the request
-  console.log('inside create session', req.cookies, req.get('Cookie'));
   if (!req.cookies || Object.keys(req.cookies).length === 0) {
   //  models.Sessions.create()
     module.exports.createSessionAndAttachCookie(req, res)
@@ -35,12 +32,9 @@ module.exports.createSession = (req, res, next) => {
     
   // else
   } else {
-    console.log('inside else', req.cookies, req.get('Cookie'));
     //  check that there is a hash in the sessions table to match cookie
     models.Sessions.get({hash: req.cookies['shortlyid']})
       .then(result => {
-        console.log('tried to get', result);
-        // if result is undefined (cookie not in sessions database)
         if (result === undefined) {
           module.exports.createSessionAndAttachCookie(req, res)
             .then(() => {
@@ -58,7 +52,6 @@ module.exports.createSession = (req, res, next) => {
         return result.userId;
       })
       .then((userId) => {
-        console.log('userId?', userId);
         if (userId === null) {
           next();
           throw ('no userId');
@@ -66,7 +59,6 @@ module.exports.createSession = (req, res, next) => {
         return models.Users.get({id: userId});
       })
       .then(result => {
-        console.log(result);
         req.session.user = {username: result.username};
         next();
       })

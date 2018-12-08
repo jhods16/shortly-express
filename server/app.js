@@ -141,24 +141,19 @@ app.post('/signup',
   (req, res) => {
     //get username
     var username = req.body.username;
-    console.log('got username:', username);
     //get password
     var password = req.body.password;
     var userId;
-    console.log('got password:', password);
     //get cookie from header?
     //pass these values along to models.Users.create
     models.Users.create({ username, password })
       .then((results) => {
-        console.log('before update sessions database', req.session.hash);
         models.Sessions.update({hash: req.session.hash}, { userId: results.insertId })
           .then(() => {
-            console.log('in then after update');
             res.redirect('/');
           });
       })
       .catch((err) => {
-        console.log(err);
         res.redirect('/signup');
       });
 
