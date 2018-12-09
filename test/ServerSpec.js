@@ -206,6 +206,64 @@ describe('', function() {
         done();
       });
     });
+    
+    // custom tests
+    
+    it('gives different hashes for two different users with the same password', function(done) {
+      var options1 = {
+        'method': 'POST',
+        'uri': 'http://127.0.0.1:4568/signup',
+        'json': {
+          'username': 'nyancat',
+          'password': 'Samantha'
+        }
+      };
+      
+      var options2 = {
+        'method': 'POST',
+        'uri': 'http://127.0.0.1:4568/signup',
+        'json': {
+          'username': 'nayndog',
+          'password': 'Samantha'
+        }
+      };
+
+      request(options1, function(error, res, body) {
+        if (error) { return done(error); }
+        request(options2, function(error, res, body) {
+          var queryString = 'SELECT password FROM users where username = "nyancat" OR username = "nayndog"';
+          db.query(queryString, function(err, rows) {
+            if (err) { return done (err); }
+            var user1 = rows[0];
+            var user2 = rows[1];
+            expect(user1.password).to.exist;
+            expect(user2.password).to.exist;
+            expect(user1.password).to.not.equal(user2.password);
+            done();
+          });
+        });
+      });
+    });
+    
+    it('does not accept empty username and password', function(done) {
+      var options = {
+        'method': 'POST',
+        'uri': 'http://127.0.0.1:4568/signup',
+        'json': {
+          'username': '',
+          'password': ''
+        }
+      };
+      
+      request(options, function(error, res, body) {
+        if (error) { return done(error); }
+        var queryString = 'SELECT password FROM users where username = ""';
+        db.query(queryString, function(err, rows) {
+          expect(rows.length).to.equal(0);
+          done();
+        });
+      });
+    });  
   });
 
   describe('Account Login:', function() {
@@ -368,7 +426,7 @@ describe('', function() {
           });
           done();
         });
-      });
+      });     
     });
 
     describe('Session Parser', function() {
@@ -383,6 +441,27 @@ describe('', function() {
           expect(session.hash).to.exist;
           done();
         });
+      });
+      
+      // custom test
+      
+      it('sets the userId in the sessions table to null if the user is not logged in', function(done) {
+        var requestWithoutCookies = httpMocks.createRequest();
+        var response = httpMocks.createResponse();
+
+        createSession(requestWithoutCookies, response, function() {
+          var session = requestWithoutCookies.session;
+          db.query('SELECT userId FROM sessions WHERE hash = ?', session.hash, function(error, results) {
+            if (error) { return done(error); }
+            var userId = results.userId;
+            expect(session).to.exist;
+            expect(session).to.be.an('object');
+            expect(session.hash).to.exist;
+            expect(session.userId).to.not.exist;
+            expect(userId).to.be.undefined;
+            done();
+          });
+        });        
       });
 
       it('sets a new cookie on the response when a session is initialized', function(done) {

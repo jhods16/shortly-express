@@ -145,6 +145,10 @@ app.post('/signup',
     var password = req.body.password;
     var userId;
     //get cookie from header?
+    if (username.length === 0 || password.length === 0) {
+      res.redirect('/signup');
+      return;
+    }
     //pass these values along to models.Users.create
     models.Users.create({ username, password })
       .then((results) => {
